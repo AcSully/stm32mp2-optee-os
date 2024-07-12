@@ -38,6 +38,11 @@
 
 #define NOTIF_VALUE_DO_BOTTOM_HALF	0
 
+/* NOTIF_VALUE_DO_IT notify that an IT is pending */
+#define NOTIF_VALUE_DO_IT		1
+
+#define NOTIF_IT_VALUE_MAX		U(31)
+
 /*
  * enum notif_event - Notification of an event
  * @NOTIF_EVENT_STARTED:	Delivered in an atomic context to inform
@@ -70,7 +75,8 @@ enum notif_event {
  * struct notif_driver - Registration of driver notification
  * @atomic_cb:	 A callback called in an atomic context from
  *		 notif_deliver_atomic_event(). Currently only used to
- *		 signal @NOTIF_EVENT_STARTED.
+ *		 signal @NOTIF_EVENT_STARTED. Return true to ask
+ *		 bottom half thread and false otherwise.
  * @yielding_cb: A callback called in a yielding context from
  *		 notif_deliver_event(). Currently only used to signal
  *		 @NOTIF_EVENT_DO_BOTTOM_HALF and @NOTIF_EVENT_STOPPED.
@@ -84,7 +90,7 @@ enum notif_event {
  * using mutexes and condition variables.
  */
 struct notif_driver {
-	void (*atomic_cb)(struct notif_driver *ndrv, enum notif_event ev);
+	bool (*atomic_cb)(struct notif_driver *ndrv, enum notif_event ev);
 	void (*yielding_cb)(struct notif_driver *ndrv, enum notif_event ev);
 	SLIST_ENTRY(notif_driver) link;
 };
@@ -111,8 +117,13 @@ TEE_Result notif_wait(uint32_t value);
  */
 #if defined(CFG_CORE_ASYNC_NOTIF)
 void notif_send_async(uint32_t value);
+void notif_send_it(uint32_t it_value);
 #else
 static inline void notif_send_async(uint32_t value __unused)
+{
+}
+
+static inline void notif_send_it(uint32_t value __unused)
 {
 }
 #endif
@@ -143,12 +154,27 @@ static inline void notif_unregister_driver(struct notif_driver *ndrv __unused)
 /* This is called from a fast call */
 #if defined(CFG_CORE_ASYNC_NOTIF)
 uint32_t notif_get_value(bool *value_valid, bool *value_pending);
+uint32_t it_get_value(bool *value_valid, bool *value_pending);
+uint32_t it_set_mask(uint32_t it_value, bool masked);
 #else
 static inline uint32_t notif_get_value(bool *value_valid, bool *value_pending)
 {
 	*value_valid = false;
 	*value_pending = false;
 	return UINT32_MAX;
+}
+
+static inline uint32_t it_get_value(bool *value_valid, bool *value_pending)
+{
+	*value_valid = false;
+	*value_pending = false;
+	return UINT32_MAX;
+}
+
+static inline uint32_t it_set_mask(uint32_t it_value __unused,
+				   bool masked __unused)
+{
+	return 0;
 }
 #endif
 

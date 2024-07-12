@@ -122,7 +122,7 @@ comp-cppflags-$2 = $$(filter-out $$(CPPFLAGS_REMOVE) $$(cppflags-remove) \
 		      $$(cppflags-lib$$(comp-lib-$2)) $$(cppflags-$2)) \
 		      -D__FILE_ID__=$$(subst -,_,$$(subst /,_,$$(subst .,_,$1)))
 
-comp-flags-$2 += -MD -MF $$(comp-dep-$2) -MT $$@
+comp-flags-$2 += -MD -MF $$(comp-dep-$2) -MP -MT $$@
 comp-flags-$2 += $$(comp-cppflags-$2)
 
 comp-cmd-$2 = $$(comp-compiler-$2) $$(comp-flags-$2) -c $$< -o $$@
@@ -270,7 +270,8 @@ cleanfiles := $$(cleanfiles) $2 \
 		$$(dtb-predts-$2) $$(dtb-predep-$2) \
 		$$(dtb-dep-$2) $$(dtb-cmd-file-$2)
 
-dtb-cppflags-$2 := -Icore/include/ -x assembler-with-cpp -Ulinux -Uunix \
+dtb-cppflags-$2 := -Icore/include/ -I$(arch-dir)/dts -x assembler-with-cpp \
+		   -Ulinux -Uunix \
 		   -E -ffreestanding $$(CPPFLAGS) \
 		   -MD -MF $$(dtb-predep-$2) -MT $2
 

@@ -17,6 +17,23 @@ PLATFORM_FLAVOR_$(PLATFORM_FLAVOR) := y
 $(eval $(call cfg-depends-all,CFG_PAGED_USER_TA,CFG_WITH_PAGER CFG_WITH_USER_TA))
 include core/crypto.mk
 
+ifeq ($(CFG_WITH_TUI),y)
+ifneq ($(CFG_FRAME_BUFFER),y)
+(warning: disabling CFG_WITH_TUI due to missing CFG_FRAME_BUFFER)
+CFG_WITH_TUI :=
+ifeq ($(CFG_WITH_TUI),y)
+$(error error: can't disable CFG_WITH_TUI)
+endif
+endif
+ifneq ($(CFG_DISPLAY),y)
+$(warning warning: disabling CFG_WITH_TUI due to missing CFG_DISPLAY)
+CFG_WITH_TUI :=
+ifeq ($(CFG_WITH_TUI),y)
+$(error error: can't disable CFG_WITH_TUI)
+endif
+endif
+endif
+
 ifeq ($(CFG_SCMI_SCPFW),y)
 include core/lib/scmi-server/conf.mk
 endif
@@ -148,7 +165,7 @@ include mk/lib.mk
 
 ifeq ($(CFG_ZLIB),y)
 libname = zlib
-libdir = core/lib/zlib
+libdir = lib/libzlib
 include mk/lib.mk
 endif
 
@@ -162,6 +179,17 @@ libdir = core/lib/scmi-server
 include mk/lib.mk
 endif
 
+ifeq ($(CFG_PSA_ADAC),y)
+libname = psa-adac
+libdir = core/lib/psa-adac
+include mk/lib.mk
+endif
+
+ifeq ($(CFG_RSE_COMMS),y)
+libname = rse_comms
+libdir = core/lib/rse_comms
+include mk/lib.mk
+endif
 #
 # Do main source
 #
