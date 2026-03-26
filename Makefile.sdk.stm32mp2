@@ -1,0 +1,191 @@
+# Set default path
+SRC_PATH ?= $(PWD)
+BLD_PATH ?= $(SRC_PATH)/build
+DEPLOYDIR ?= $(SRC_PATH)/deploy
+FIPTOOLDIR ?= $(SRC_PATH)/..
+
+# Set default optee-os config
+OPTEE_CONFIG ?=  optee optee-programmer 
+
+# Set default FIP config
+FIP_CONFIG ?= optee-emmc optee-nor optee-sdcard optee-programmer-usb opteemin-emmc opteemin-nor opteemin-sdcard opteemin-programmer-usb
+
+# Default Optee-os overall settings to null
+CFG_EMBED_DTB_SOURCE_FILE ?=
+OPTEE_EXTRA_OPTFLAGS ?=
+
+#EXTDT_DIR_OPTEE ?= stm32mp2/a35-td/optee
+#EXTDT_DIR_OPTEE_SERIAL ?= stm32mp2/a35-td/optee
+EXTDT_DIR_OPTEE ?= CA35/DeviceTree/STM32MP257DAK3/optee-os
+EXTDT_DIR_OPTEE_SERIAL ?= CA35/DeviceTree/STM32MP257DAK3/optee-os
+
+OPTEE_DEVICETREE_INTERNAL_optee ?= stm32mp215f-dk stm32mp235f-dk stm32mp257f-dk stm32mp257f-ev1 
+OPTEE_DEVICETREE_EXTERNAL_optee ?= stm32mp215f-dk-ca35tdcid-ostl stm32mp215f-dk-ca35tdcid-ostl-m33-examples stm32mp257f-dk-ca35tdcid-ostl stm32mp257f-dk-ca35tdcid-ostl-m33-examples stm32mp257f-ev1-ca35tdcid-ostl stm32mp257f-ev1-ca35tdcid-ostl-m33-examples stm32mp257f-ev1-ca35tdcid-ostl-m33-examples-sram 
+OPTEE_DEVICETREE_optee = $(OPTEE_DEVICETREE_INTERNAL_optee) $(if $(EXTDT_DIR),$(OPTEE_DEVICETREE_EXTERNAL_optee))
+OPTEE_EXTRA_OPTFLAGS_optee ?= CFG_EXT_DTS=$(EXTDT_DIR)/$(EXTDT_DIR_OPTEE) CFG_STM32MP_PROFILE=secure_and_system_services
+OPTEE_DEVICETREE_INTERNAL_opteemin ?=  stm32mp215f-dk stm32mp235f-dk stm32mp257f-dk stm32mp257f-ev1 
+OPTEE_DEVICETREE_EXTERNAL_opteemin ?= stm32mp215f-dk-ca35tdcid-ostl stm32mp215f-dk-ca35tdcid-ostl-m33-examples stm32mp257f-dk-ca35tdcid-ostl stm32mp257f-dk-ca35tdcid-ostl-m33-examples stm32mp257f-ev1-ca35tdcid-ostl stm32mp257f-ev1-ca35tdcid-ostl-m33-examples stm32mp257f-ev1-ca35tdcid-ostl-m33-examples-sram 
+OPTEE_DEVICETREE_opteemin = $(OPTEE_DEVICETREE_INTERNAL_opteemin) $(if $(EXTDT_DIR),$(OPTEE_DEVICETREE_EXTERNAL_opteemin))
+OPTEE_EXTRA_OPTFLAGS_opteemin ?= CFG_EXT_DTS=$(EXTDT_DIR)/$(EXTDT_DIR_OPTEE) CFG_STM32MP_PROFILE=system_services
+OPTEE_DEVICETREE_INTERNAL_optee-programmer ?=  stm32mp215f-dk stm32mp235f-dk stm32mp257f-dk stm32mp257f-ev1 
+OPTEE_DEVICETREE_EXTERNAL_optee-programmer ?= stm32mp215f-dk-ca35tdcid-ostl stm32mp215f-dk-ca35tdcid-ostl-m33-examples stm32mp257f-dk-ca35tdcid-ostl stm32mp257f-dk-ca35tdcid-ostl-m33-examples stm32mp257f-ev1-ca35tdcid-ostl stm32mp257f-ev1-ca35tdcid-ostl-m33-examples stm32mp257f-ev1-ca35tdcid-ostl-m33-examples-sram 
+OPTEE_DEVICETREE_optee-programmer = $(OPTEE_DEVICETREE_INTERNAL_optee-programmer) $(if $(EXTDT_DIR),$(OPTEE_DEVICETREE_EXTERNAL_optee-programmer))
+OPTEE_EXTRA_OPTFLAGS_optee-programmer ?= CFG_EXT_DTS=$(EXTDT_DIR)/$(EXTDT_DIR_OPTEE_SERIAL) CFG_STM32MP_PROFILE=secure_and_system_services
+OPTEE_DEVICETREE_INTERNAL_opteemin-programmer ?=  stm32mp215f-dk stm32mp235f-dk stm32mp257f-dk stm32mp257f-ev1 
+OPTEE_DEVICETREE_EXTERNAL_opteemin-programmer ?= stm32mp215f-dk-ca35tdcid-ostl stm32mp215f-dk-ca35tdcid-ostl-m33-examples stm32mp257f-dk-ca35tdcid-ostl stm32mp257f-dk-ca35tdcid-ostl-m33-examples stm32mp257f-ev1-ca35tdcid-ostl stm32mp257f-ev1-ca35tdcid-ostl-m33-examples stm32mp257f-ev1-ca35tdcid-ostl-m33-examples-sram 
+OPTEE_DEVICETREE_opteemin-programmer = $(OPTEE_DEVICETREE_INTERNAL_opteemin-programmer) $(if $(EXTDT_DIR),$(OPTEE_DEVICETREE_EXTERNAL_opteemin-programmer))
+OPTEE_EXTRA_OPTFLAGS_opteemin-programmer ?= CFG_EXT_DTS=$(EXTDT_DIR)/$(EXTDT_DIR_OPTEE_SERIAL) CFG_STM32MP_PROFILE=system_services
+
+# Remove default variables
+LDFLAGS =
+CFLAGS = $(LIBGCC_LOCATE_CFLAGS)
+CPPFLAGS =
+
+# Define default make options
+EXTRA_OEMAKE = PLATFORM=stm32mp2 CROSS_COMPILE_core=aarch64-ostl-linux- ARCH=arm CFG_ARM64_core=y CROSS_COMPILE_ta_arm64=aarch64-ostl-linux- NOWERROR=1 LDFLAGS= CFG_TEE_CORE_LOG_LEVEL=2 CFG_TEE_CORE_DEBUG=y
+
+# support of TA_arm64 and TA_arm32
+SDK_CROSS_COMPILE_TA_ARM32_TOOLCHAIN ?= $(OECORE_NATIVE_SYSROOT)/usr/share/gcc-arm-none-eabi/bin/arm-none-eabi-
+ifeq ($(TA32_64),1)
+EXTRA_OEMAKE += CROSS_COMPILE_ta_arm32=${SDK_TA_ARM32_TOOLCHAIN} supported-ta-targets='ta_arm64 ta_arm32'
+endif
+
+# Display Optee-os config details (optee-configs <CONFIG>)
+define optee-configs
+	echo "  $(1)" ; \
+	echo "    with device tree : $(if $(CFG_EMBED_DTB_SOURCE_FILE),$(CFG_EMBED_DTB_SOURCE_FILE),$(OPTEE_DEVICETREE_$(1)))" ; \
+	echo "    extra optionflags: $(if $(OPTEE_EXTRA_OPTFLAGS),$(OPTEE_EXTRA_OPTFLAGS),$(OPTEE_EXTRA_OPTFLAGS_$(1)))" ;
+endef
+
+
+# Configure Optee-os check configuration rules (check-config <CONFIG>)
+#   chk-conf-<CONFIG>
+define check-config
+chk-conf-$(1):
+	@$(foreach dt, $(if $(CFG_EMBED_DTB_SOURCE_FILE), $(CFG_EMBED_DTB_SOURCE_FILE),$(OPTEE_DEVICETREE_$(1))), \
+		$(foreach soc,  stm32mp21  stm32mp23  stm32mp25 , \
+			$(if $(findstring $(soc),$(dt)), \
+				mkdir -p $(BLD_PATH)/$(1)-$(dt); \
+				touch $(BLD_PATH)/$(1)-$(dt)/$(dt)-chk-conf.txt ; \
+			,) \
+		) \
+		if ! [ -f $(BLD_PATH)/$(1)-$(dt)/$(dt)-chk-conf.txt ]; then \
+			echo "[CONFIG ERROR] Wrong device tree file name: $(dt)"; \
+			echo "[CONFIG ERROR] It should contain the SOC pattern name (any of  stm32mp21  stm32mp23  stm32mp25 )"; \
+			exit 1; \
+		fi; \
+		rm -f $(BLD_PATH)/$(1)-$(dt)/$(dt)-chk-conf.txt ; \
+	)
+endef
+
+# Configure Optee-os make rules (optee-rules-by-dt <CONFIG> <SOC> <DT>)
+#   tee-<CONFIG>-<SOC>-<DT>: <DEPS>
+define optee-rules-by-dt
+tee-$(1)-$(2)-$(3): chk-conf-$(1)
+	@mkdir -p $(BLD_PATH)/$(1)-$(3); \
+	$(MAKE) $(EXTRA_OEMAKE) \
+		$(OPTEE_EXTRA_OPTFLAGS_$(1)) \
+		-C $(SRC_PATH) PREFIX=$(SDKTARGETSYSROOT) \
+		O=$(BLD_PATH)/$(1)-$(3) \
+		CFG_EMBED_DTB_SOURCE_FILE=$(3).dts || exit 1;
+endef
+
+# Configure Optee-os deploy rules (deploy-rules-by-dt <CONFIG> <SOC> <DT>)
+#   deploy-<CONFIG>-<SOC>-<DT>: <DEPS>
+define deploy-rules-by-dt
+deploy-$(1)-$(2)-$(3): tee-$(1)-$(2)-$(3)
+	@mkdir -p $(DEPLOYDIR)
+	@mkdir -p $(DEPLOYDIR)/debug
+	$(if $(findstring $(2),$(3)), \
+		cp -f $(BLD_PATH)/$(1)-$(3)/core/tee-header_v2.bin $(DEPLOYDIR)/tee-header_v2-$(3)-$(1).bin ; \
+		cp -f $(BLD_PATH)/$(1)-$(3)/core/tee-pager_v2.bin $(DEPLOYDIR)/tee-pager_v2-$(3)-$(1).bin ; \
+		cp -f $(BLD_PATH)/$(1)-$(3)/core/tee-pageable_v2.bin $(DEPLOYDIR)/tee-pageable_v2-$(3)-$(1).bin ; \
+		cp -f $(BLD_PATH)/$(1)-$(3)/core/tee.elf $(DEPLOYDIR)/debug/tee-$(3)-$(1).elf ; \
+	,)
+endef
+
+# Configure overall check config rules lits
+optee-check-config := $(foreach config, $(OPTEE_CONFIG), chk-conf-$(config))
+
+# Configure overall deploy rules list
+optee-deploy := $(foreach config, $(OPTEE_CONFIG), \
+					$(foreach soc,  stm32mp21  stm32mp23  stm32mp25 , \
+						$(foreach dt, $(if $(CFG_EMBED_DTB_SOURCE_FILE), $(CFG_EMBED_DTB_SOURCE_FILE),$(OPTEE_DEVICETREE_$(config))), \
+							$(if $(findstring $(soc),$(dt)), deploy-$(config)-$(soc)-$(dt), chk-conf-$(config)) \
+						) \
+					) \
+				)
+
+# Set dependencies list for building all
+DEPS = $(optee-deploy)
+DEPS += fip
+
+help: $(optee-check-config)
+	@echo ""
+	@echo "OPTEE-OS configuration:"
+	@echo "  OPTEE_CONFIG = $(OPTEE_CONFIG)"
+	@echo "Config details:"
+	@$(foreach config, $(OPTEE_CONFIG), $(call optee-configs,$(config)))
+	@echo ""
+	@echo "Note that each Optee-os configuration settings can be updated through overall or specific config var:"
+	@echo "  CFG_EMBED_DTB_SOURCE_FILE"
+	@echo "  OPTEE_EXTRA_OPTFLAGS"
+	@echo ""
+	@echo "OPTEE-OS folder configuration:"
+	@echo "  SRC_PATH  = $(SRC_PATH)"
+	@echo "  BLD_PATH  = $(BLD_PATH)"
+	@echo "  DEPLOYDIR = $(DEPLOYDIR)"
+	@echo "  EXTDT_DIR = $(EXTDT_DIR)"
+	@echo "Support of TA_arm64 and TA_arm32"
+	@echo "  TA32_64   = $(TA32_64)
+	@echo ""
+	@echo "FIP configuration:"
+	@echo "  Do not forget to set FIP deploydir folders (such as FIP_DEPLOYDIR_ROOT) to provide path to needed binaries"
+	@echo ""
+	@echo "Available targets:"
+	@echo "  all   : default target to build all binaries for defined config(s)"
+	@echo "  fip   : build FIP binaries for defined config(s)"
+	@echo "  optee : build OPTEE-OS binaries for defined config(s)"
+	@echo "  clean : clean build directories from generated files"
+	@echo ""
+
+all: $(DEPS)
+
+# generate check config rules
+$(foreach config, $(OPTEE_CONFIG), $(eval $(call check-config,$(config))))
+
+# generate optee rules by dt
+$(foreach config, $(OPTEE_CONFIG), \
+	$(foreach soc,   stm32mp21  stm32mp23  stm32mp25  , \
+		$(foreach dt, $(if $(CFG_EMBED_DTB_SOURCE_FILE), $(CFG_EMBED_DTB_SOURCE_FILE),$(OPTEE_DEVICETREE_$(config))), \
+			$(if $(findstring $(soc),$(dt)), \
+				$(eval $(call optee-rules-by-dt,$(config),$(soc),$(dt))) \
+			,)\
+		)\
+	)\
+)
+
+# generate deploy rules by dt
+$(foreach config, $(OPTEE_CONFIG), \
+	$(foreach soc,  stm32mp21  stm32mp23  stm32mp25  , \
+		$(foreach dt, $(if $(CFG_EMBED_DTB_SOURCE_FILE), $(CFG_EMBED_DTB_SOURCE_FILE),$(OPTEE_DEVICETREE_$(config))), \
+			$(if $(findstring $(soc),$(dt)), \
+				$(eval $(call deploy-rules-by-dt,$(config),$(soc),$(dt))) \
+			,)\
+		)\
+	)\
+)
+
+fip: $(optee-deploy)
+	for fipconfig in $(FIP_CONFIG) ; do \
+		FIP_DEPLOYDIR_OPTEE=$(DEPLOYDIR) FIP_CONFIG="$$fipconfig" $(if $(CFG_EMBED_DTB_SOURCE_FILE),FIP_DEVICETREE="$(CFG_EMBED_DTB_SOURCE_FILE)") $(FIPTOOLDIR)/fiptool-stm32mp.stm32mp2 || exit 1;\
+	done
+
+optee: $(optee-deploy)
+
+clean:
+	@echo "Removing $(BLD_PATH) ..."
+	@rm -rf $(BLD_PATH)
+	@echo "Removing $(DEPLOYDIR) ..."
+	@rm -rf $(DEPLOYDIR)
+	@echo ""
